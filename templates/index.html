@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Demand Forecast</title>
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=EB+Garamond:wght@400;600&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.0"></script>
+
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            width: 100%;
+            overflow-x: hidden;
+        }
+
+        body {
+            font-family: 'Merriweather', sans-serif;
+            background: #121212;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            color: #FFFFFF;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        #vanta-bg {
+            width: 100%;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: -1;
+        }
+
+        .title {
+            font-family: 'Bebas Neue', sans-serif;
+            width: 80%;
+            max-width: 700px;
+            height: 150px;
+            margin: 40px auto 25px auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        #vanta-heading-animation {
+            width: 100%;
+            height: 100%;
+            border-radius: 15px;
+            overflow: hidden;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 0;
+        }
+
+        .title-text {
+            font-size: 74px;
+            color: #FFFFFF;
+            text-align: center;
+            z-index: 1;
+            position: relative;
+        }
+
+        .container {
+            background: rgba(28, 28, 28, 0.85);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            width: 100%;
+            max-width: 800px;
+            animation: fadeIn 0.8s ease-in-out;
+            margin-top: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .section-box {
+            background: rgba(28, 28, 28, 0.85); /* Slightly less transparent */
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 30px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 800px;
+            animation: fadeIn 0.8s ease-in-out;
+            z-index: 1; /* Ensure content is above fixed background */
+            position: relative; /* Needed for z-index */
+            .section-box h3 {
+    border-left: 5px solid #0000FF;
+    padding-left: 12px;
+}
+
+        }
+
+        h2, h3 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 48px;
+            font-weight: normal;
+            color: #FFFFFF;
+            margin-bottom: 15px; /* More space below h3 */
+            text-align: left; /* Default alignment */
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            align-items: center;
+        }
+
+       input[type="date"],
+        input[type="file"] {
+            padding: 12px; /* Slightly more padding */
+            width: 100%; /* Full width within form */
+            font-size: 16px;
+            border: 1px solid #555; /* Darker border */
+            border-radius: 10px;
+            background: #333;
+            color: #fff;
+            font-family: 'Merriweather', sans-serif;
+        }
+
+        button {
+            background-color: #0000FF;
+            color: #fff;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 10px;
+            font-size: 24px;
+            font-family: 'Bebas Neue', sans-serif;
+            cursor: pointer;
+            width: 100%;
+            max-width: 300px;
+            transition: background 0.3s ease, transform 0.2s ease;
+        }
+
+        button:hover {
+            background-color: #0047AB;
+            transform: translateY(-2px);
+        }
+        button:active {
+            transform: translateY(0px); /* Press down effect */
+        }
+
+        .result-box {
+            background: rgba(51, 51, 51, 0.8);
+            margin-top: 25px;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            min-height: 60px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .predicted {
+            font-size: 25px;
+            font-family: 'Bebas Neue', sans-serif;
+            color: #E0E0E0;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 400px;
+            width: 100%;
+            background: #1a1a1a;
+            border-radius: 8px;
+            padding: 15px;
+        }
+
+        canvas#forecastChart {
+            width: 100%;
+            height: 100%;
+            background: transparent;
+            plugins: {
+    zoom: {
+        zoom: {
+            wheel: { enabled: true },
+            pinch: { enabled: true },
+            mode: 'x',
+        },
+        pan: {
+            enabled: true,
+            mode: 'x',
+        }
+    }
+}
+        }
+
+        footer {
+            margin-top: 50px;
+            padding-bottom: 20px;
+            font-size: 14px;
+            color: #AAAAAA;
+            text-align: center;
+        }
+        input:hover {
+    border-color: #0000FF;
+    background-color: #2a2a2a;
+}
+
+button:hover {
+    background-color: #0047AB;
+    transform: scale(1.03);
+}
+         button, input {
+    transition: all 0.3s ease;
+}
+        /* Fade In Animation */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Responsive Adjustments */
+        @media (max-width: 768px) {
+            .title {
+                height: 120px; /* Adjust heading height */
+                width: 90%;
+            }
+            .title-text {
+                font-size: 48px;
+            }
+            h2, h3 {
+                font-size: 32px;
+            }
+            h3 {
+                font-size: 28px;
+            }
+            button {
+                font-size: 22px;
+                max-width: none; /* Allow button full width */
+            }
+            .chart-wrapper {
+                height: 350px; /* Adjust chart height */
+            }
+            .container, .section-box {
+                padding: 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .title {
+                height: 100px; /* Further adjust heading height */
+                width: 95%;
+            }
+            .title-text {
+                font-size: 36px;
+            }
+            h2, h3 {
+                font-size: 28px;
+            }
+            h3 {
+                font-size: 24px;
+            }
+            button {
+                font-size: 20px;
+            }
+            .chart-wrapper {
+                height: 300px; /* Adjust chart height */
+            }
+            .result-box {
+                padding: 15px;
+            }
+            .predicted {
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="vanta-bg"></div>
+
+    <h1 class="title">
+        <div id="vanta-heading-animation"></div>
+        <span class="title-text">DEMAND FORECAST</span>
+    </h1>
+
+    <div class="container">
+        <form id="predictForm">
+            <input type="date" id="forecastDate" name="forecastDate" required />
+            <button type="submit">Predict</button>
+        </form>
+
+        <div class="result-box">
+            <span id="predictionOutput" class="predicted">PREDICTED:</span>
+        </div>
+
+        <div class="section-box chart-container">
+            <h3>Forecast Chart</h3>
+            <div class="chart-wrapper">
+                <canvas id="forecastChart"></canvas>
+            </div>
+
+         <div class="section-box explanation">
+        <h3>How the ML Model Works</h3>
+        <p>This model learns from past sales data patterns to predict future demand using a Linear Regression algorithm.</p>
+    </div>
+<div class="section-box upload-box">
+        <h3>Upload Your Dataset</h3>
+        <input type="file" aria-label="Upload dataset"/>
+    </div>
+             
+<!-- Paste this inside <div class="container"> before the <footer> -->
+<div class="section-box">
+    <h3>About the Project</h3>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px;">
+        <div style="background: #1e1e1e; padding: 20px; border-radius: 10px;">
+            <h4 style="font-family: 'Bebas Neue', sans-serif; font-size: 24px;">📊 What It Does</h4>
+            <p>This tool predicts future demand based on past sales data using machine learning (Linear Regression).</p>
+        </div>
+        <div style="background: #1e1e1e; padding: 20px; border-radius: 10px;">
+            <h4 style="font-family: 'Bebas Neue', sans-serif; font-size: 24px;">⚙️ How It Works</h4>
+            <p>It trains on a CSV of dates and sales, converts dates to numbers, fits a model, and predicts sales for future dates.</p>
+        </div>
+        <div style="background: #1e1e1e; padding: 20px; border-radius: 10px;">
+            <h4 style="font-family: 'Bebas Neue', sans-serif; font-size: 24px;">💡 Why It Matters</h4>
+            <p>Businesses can plan stock better, avoid overproduction or shortage, and improve decision-making with data-driven insights.</p>
+        </div>
+    </div>
+</div>
+
+<!-- Paste this AFTER the above section, still inside the container -->
+<div class="section-box">
+    <h3>Future Scope</h3>
+    <ul style="padding-left: 25px;">
+        <li><strong>Real-Time Demand Prediction:</strong> Instantly predict demand using live sales data and APIs.</li>
+        <li><strong>Support for Multiple Locations:</strong> Forecast based on city, branch, or regional trends.</li>
+        <li><strong>Model Upgrades:</strong> Move from basic regression to advanced AI models like XGBoost or LSTM.</li>
+        <li><strong>Platform Integration:</strong> Plug into mobile apps, dashboards, or inventory systems.</li>
+        <li><strong>Alert Mechanism:</strong> Get notified when demand spikes or stock runs low.</li>
+        <li><strong>Interactive Visualizations:</strong> Future versions can show data trends with draggable charts.</li>
+        <li><strong>Smarter Inputs:</strong> Add data like weather, festivals, or competitor trends for accuracy.</li>
+    </ul>
+</div>
+
+
+    <div class="section-box ml-explanation">
+        <h3>Model Explanation</h3>
+        <p>This model uses Linear Regression, which finds the best-fit straight line through your historical data points to make educated guesses about future values.</p>
+    </div>
+
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2025 Demand Forecast. All rights reserved.</p>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.waves.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.net.min.js"></script>
+
+    <script>
+        VANTA.WAVES({
+            el: "#vanta-heading-animation",
+            mouseControls: true,
+            touchControls: true,
+            gyroControls: false,
+            minHeight: 150.00,
+            minWidth: 200.00,
+            scale: 1.00,
+            scaleMobile: 1.00,
+            color: 0x00008B,
+            shininess: 40.00,
+            waveHeight: 19.00,
+            waveSpeed: 0.25
+        });
+
+        VANTA.NET({
+            el: "#vanta-bg",
+            mouseControls: true,
+            touchControls: true,
+            gyroControls: false,
+            minHeight: 200.00,
+            minWidth: 200.00,
+            scale: 1.00,
+            scaleMobile: 1.00,
+            color: 0x0000FF,
+            backgroundColor: 0x121212,
+            points: 9.00,
+            maxDistance: 25.00,
+            spacing: 18.00
+        });
+    </script>
+
+    <script>
+        const ctx = document.getElementById("forecastChart").getContext("2d");
+        const forecastChart = new Chart(ctx, {
+            type: "line",
+            data: {
+                labels: [],
+                datasets: [{
+                    label: "Predicted Demand",
+                    data: [],
+                    borderColor: "#0000FF",
+                    backgroundColor: "rgba(0, 0, 229, 0.2)",
+                    tension: 0.4,
+                    fill: true,
+                    pointBackgroundColor: "#FFFFFF",
+                    pointBorderColor: "#0000FF"
+                }]
+            },
+
+plugins: {
+    zoom: {
+        zoom: {
+            wheel: { enabled: true },
+            pinch: { enabled: true },
+            mode: 'x',
+        },
+        pan: {
+            enabled: true,
+            mode: 'x',
+        }
+    }
+},
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        ticks: { color: "#fff" }
+                    },
+                    x: {
+                        ticks: { color: "#fff" }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        labels: { color: "#fff" }
+                    },
+                 tooltip: {
+                     callbacks: {
+                        label: function(context) {
+                            return `Demand: ${context.parsed.y} units`;
+            }
+        }
+    }
+                }
+            }
+        });
+
+        document.getElementById('predictForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const date = document.getElementById('forecastDate').value;
+
+            const response = await fetch('http://127.0.0.1:5000/predict', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ date: date })
+            });
+
+            const result = await response.json();
+            document.getElementById('predictionOutput').innerText = "PREDICTED: " + result.prediction + " units";
+
+            // Update the chart
+            forecastChart.data.labels.push(date);
+            forecastChart.data.datasets[0].data.push(result.prediction);
+            forecastChart.update();
+        });
+    </script>
+</body>
+</html>
